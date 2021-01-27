@@ -61,5 +61,16 @@ where
     }
 }
 
+/// Same as `with_alloca` except it zeroes memory slice.
+pub fn with_alloca_zeroed<R, F>(size: usize, f: F) -> R
+where
+    F: FnOnce(&mut [u8]) -> R,
+{
+    with_alloca(size, |memory| unsafe {
+        core::ptr::write_bytes(memory.as_mut_ptr().cast::<u8>(), 0, size);
+        f(core::mem::transmute(memory))
+    })
+}
+
 #[cfg(test)]
 mod tests;
