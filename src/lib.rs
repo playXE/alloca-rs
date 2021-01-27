@@ -1,6 +1,6 @@
 #![no_std]
 
-use core::mem::MaybeUninit;
+use core::mem::{size_of, MaybeUninit};
 
 /// Allocates `[u8;size]` memory on stack and invokes `closure` with this slice as argument.
 ///
@@ -69,6 +69,17 @@ where
     with_alloca(size, |memory| unsafe {
         core::ptr::write_bytes(memory.as_mut_ptr().cast::<u8>(), 0, size);
         f(core::mem::transmute(memory))
+    })
+}
+
+/// Allocates `T` on stack space.
+pub fn alloca<T, R, F>(f: F) -> R
+where
+    F: FnOnce(&mut MaybeUninit<T>) -> R,
+{
+    with_alloca(size_of::<T>(), |memory| unsafe {
+        let raw_memory = memory.as_mut_ptr().cast::<MaybeUninit<T>>();
+        f(&mut *raw_memory)
     })
 }
 
