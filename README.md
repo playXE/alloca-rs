@@ -10,11 +10,9 @@ This crate uses Rust lifetime system to ensure that stack allocated memory will 
 ```rust
 fn main() {
     alloca::with_alloca(128, /* how much bytes we want to allocate */
-        |memory: &mut [u8] /* dynamically stack allocated slice itself */|
+        |memory: &mut [MaybeUninit<u8>] /* dynamically stack allocated slice itself */|
      {
             assert!(memory.len() == 128);
-            memory[42] = 42;
-            println!("{}",memory[42]);
     });
 }
 ```

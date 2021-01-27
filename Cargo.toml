@@ -1,6 +1,6 @@
 [package]
 name = "alloca"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Adel Prokurov <adel.prokurov@gmail.com>"]
 edition = "2018"
 description = "Mostly safe wrapper for alloca"
