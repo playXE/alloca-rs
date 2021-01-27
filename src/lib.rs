@@ -1,34 +1,4 @@
 #![no_std]
-extern crate alloc;
-use alloc::boxed::Box;
-
-extern "C" {
-    fn c_with_alloca(
-        _: usize,
-        _: unsafe extern "C" fn(_: usize, _: *mut u8, _: *mut u8) -> *mut u8,
-        _: *mut u8,
-    ) -> *mut u8;
-}
-unsafe extern "C" fn trampoline(size: usize, ptr: *mut u8, data: *mut u8) -> *mut u8 {
-    let data = &mut *data.cast::<Data>();
-    (data.closure.take().unwrap())(core::slice::from_raw_parts_mut(ptr, size))
-}
-
-struct Data {
-    closure: Option<Box<dyn FnOnce(&mut [u8]) -> *mut u8>>,
-}
-
-impl Data {
-    pub fn new<R>(clos: impl FnOnce(&mut [u8]) -> R + 'static) -> Self {
-        let boxed = move |memory: &mut [u8]| {
-            let result = Box::into_raw(Box::new(clos(memory))) as *mut u8;
-            result
-        };
-        Self {
-            closure: Some(Box::new(boxed)),
-        }
-    }
-}
 
 /// Allocates `[u8;size]` memory on stack and invokes `closure` with this slice as argument.
 ///
@@ -50,14 +20,40 @@ impl Data {
 ///
 ///
 ///
-pub fn with_alloca<R>(size: usize, closure: impl FnOnce(&mut [u8]) -> R + 'static) -> R {
-    let mut data = Data::new(closure);
-
+#[allow(nonstandard_style)]
+pub fn with_alloca<R, F>(size: usize, f: F) -> R
+where
+    F: FnOnce(&mut [u8]) -> R,
+{
     unsafe {
-        let result = c_with_alloca(size, trampoline, &mut data as *mut Data as *mut u8);
-        *Box::from_raw(result.cast::<R>())
+        use ::core::ffi::c_void;
+        type cb_t = unsafe extern "C" fn(ptr: *mut u8, data: *mut c_void);
+        extern "C" {
+            fn c_with_alloca(size: usize, cb: cb_t, data: *mut c_void);
+        }
+        let mut f = Some(f);
+        let mut ret = None::<R>;
+        // &mut (impl FnMut(*mut u8))
+        let ref mut f = |ptr: *mut u8| {
+            let slice = ::core::slice::from_raw_parts_mut(ptr, size);
+
+            ret = Some(f.take().unwrap()(slice));
+        };
+        fn with_F_of_val<F>(_: &mut F) -> cb_t
+        where
+            F: FnMut(*mut u8),
+        {
+            unsafe extern "C" fn trampoline<F: FnMut(*mut u8)>(ptr: *mut u8, data: *mut c_void) {
+                (&mut *data.cast::<F>())(ptr);
+            }
+
+            trampoline::<F>
+        }
+
+        c_with_alloca(size, with_F_of_val(f), <*mut _>::cast::<c_void>(f));
+
+        ret.unwrap()
     }
 }
-
 #[cfg(test)]
 mod tests;
