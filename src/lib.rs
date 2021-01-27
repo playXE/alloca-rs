@@ -36,9 +36,7 @@ where
         let mut ret = None::<R>;
         // &mut (impl FnMut(*mut u8))
         let ref mut f = |ptr: *mut u8| {
-            let slice = core::mem::transmute::<&mut [u8], &mut [MaybeUninit<u8>]>(
-                ::core::slice::from_raw_parts_mut(ptr, size),
-            );
+            let slice = ::core::slice::from_raw_parts_mut(ptr.cast::<MaybeUninit<u8>>(), size);
 
             ret = Some(f.take().unwrap()(slice));
         };
