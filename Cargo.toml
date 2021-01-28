@@ -1,6 +1,6 @@
 [package]
 name = "alloca"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Adel Prokurov <adel.prokurov@gmail.com>"]
 edition = "2018"
 description = "Mostly safe wrapper for alloca"
@@ -11,6 +11,9 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+
+[profile.release]
+lto = "fat"
 
 
 [build-dependencies]

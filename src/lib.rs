@@ -1,6 +1,6 @@
 #![no_std]
 
-use core::mem::{size_of, MaybeUninit};
+use core::mem::{align_of, size_of, MaybeUninit};
 
 /// Allocates `[u8;size]` memory on stack and invokes `closure` with this slice as argument.
 ///
@@ -30,6 +30,7 @@ where
         use ::core::ffi::c_void;
         type cb_t = unsafe extern "C" fn(size: usize, ptr: *mut u8, data: *mut c_void);
         extern "C" {
+
             fn c_with_alloca(size: usize, cb: cb_t, data: *mut c_void);
         }
         let mut f = Some(f);
@@ -40,6 +41,7 @@ where
 
             ret = Some(f.take().unwrap()(slice));
         };
+        #[inline(always)]
         fn with_F_of_val<F>(_: &mut F) -> cb_t
         where
             F: FnMut(*mut u8),
@@ -77,9 +79,12 @@ pub fn alloca<T, R, F>(f: F) -> R
 where
     F: FnOnce(&mut MaybeUninit<T>) -> R,
 {
-    with_alloca(size_of::<T>(), |memory| unsafe {
-        let raw_memory = memory.as_mut_ptr().cast::<MaybeUninit<T>>();
-        f(&mut *raw_memory)
+    with_alloca(size_of::<T>() + (align_of::<T>() - 1), |memory| unsafe {
+        let mut raw_memory = memory.as_mut_ptr();
+        if raw_memory as usize % align_of::<T>() != 0 {
+            raw_memory = raw_memory.add(align_of::<T>() - raw_memory as usize % align_of::<T>());
+        }
+        f(&mut *raw_memory.cast::<MaybeUninit<T>>())
     })
 }
 
