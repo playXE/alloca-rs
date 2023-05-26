@@ -5,7 +5,7 @@
 #include <malloc.h>
 #endif
 
-void *c_with_alloca(size_t size, void *(*callback)(uint8_t *, void *), void* data) {
+void c_with_alloca(size_t size, void (*callback)(uint8_t *, void *), void* data) {
 #ifdef _MSC_VER
     uint8_t *buffer = _alloca(size);
 #else
