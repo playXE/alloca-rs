@@ -28,8 +28,8 @@ where
 {
     unsafe {
         use ::core::ffi::c_void;
-        type cb_t = unsafe extern "C" fn(ptr: *mut u8, data: *mut c_void);
-        extern "C" {
+        type cb_t = unsafe extern "C-unwind" fn(ptr: *mut u8, data: *mut c_void);
+        extern "C-unwind" {
 
             fn c_with_alloca(size: usize, cb: cb_t, data: *mut c_void);
         }
@@ -46,7 +46,7 @@ where
         where
             F: FnMut(*mut u8),
         {
-            unsafe extern "C" fn trampoline<F: FnMut(*mut u8)>(ptr: *mut u8, data: *mut c_void) {
+            unsafe extern "C-unwind" fn trampoline<F: FnMut(*mut u8)>(ptr: *mut u8, data: *mut c_void) {
                 (&mut *data.cast::<F>())(ptr);
             }
 
