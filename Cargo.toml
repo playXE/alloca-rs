@@ -7,6 +7,7 @@ description = "Mostly safe wrapper for alloca"
 repository = "https://github.com/playXE/alloca-rs"
 readme = "README.md"
 keywords = ["alloca", "wrapper", "stack", "stack-allocation"]
+categories = ["api-bindings", "no-std"]
 license = "MIT"
 
 [build-dependencies]
