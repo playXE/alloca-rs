@@ -21,6 +21,10 @@ jobs:
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Rust cache
+        if: github.ref == 'refs/heads/master' # pull requests can overflow cache storage
+        uses: Swatinem/rust-cache@v2
+
       - name: Cargo build
         run: cargo build --release
 
