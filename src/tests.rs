@@ -1,17 +1,18 @@
-use crate::with_alloca;
 use core::mem::MaybeUninit;
+
+mod alloca {
+    pub use crate::*;
+}
+
 #[test]
 fn test_create() {
-    let x = with_alloca(4096, |_| {
-        assert!(true);
-        42
-    });
+    let x = alloca::with_alloca(4096, |_| 42);
     assert_eq!(x, 42);
 }
 
 #[test]
 fn test_write() {
-    let x = with_alloca(4096, |memory| {
+    let x = alloca::with_alloca(4096, |memory| {
         memory[0] = MaybeUninit::new(42);
         memory[1] = MaybeUninit::new(3);
         memory[3072] = MaybeUninit::new(4);

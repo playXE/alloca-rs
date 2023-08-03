@@ -7,7 +7,7 @@ fn main() {
     } else {
         &mut builder
     })
-    .file("alloca_.c")
+    .file("alloca.c")
     .opt_level(2)
     .compile("calloca");
 }
