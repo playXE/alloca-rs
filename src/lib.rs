@@ -72,13 +72,17 @@ pub fn alloca<T, R, F>(f: F) -> R
 where
     F: FnOnce(&mut MaybeUninit<T>) -> R,
 {
-    with_alloca(mem::size_of::<T>() + (mem::align_of::<T>() - 1), |memory| unsafe {
-        let mut raw_memory = memory.as_mut_ptr();
-        if raw_memory as usize % mem::align_of::<T>() != 0 {
-            raw_memory = raw_memory.add(mem::align_of::<T>() - raw_memory as usize % mem::align_of::<T>());
-        }
-        f(&mut *raw_memory.cast::<MaybeUninit<T>>())
-    })
+    with_alloca(
+        mem::size_of::<T>() + (mem::align_of::<T>() - 1),
+        |memory| unsafe {
+            let mut raw_memory = memory.as_mut_ptr();
+            if raw_memory as usize % mem::align_of::<T>() != 0 {
+                raw_memory = raw_memory
+                    .add(mem::align_of::<T>() - raw_memory as usize % mem::align_of::<T>());
+            }
+            f(&mut *raw_memory.cast::<MaybeUninit<T>>())
+        },
+    )
 }
 
 #[cfg(test)]
