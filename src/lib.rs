@@ -1,6 +1,9 @@
 #![no_std]
 
-use core::mem::{self, MaybeUninit};
+use core::{
+    ffi::c_void,
+    mem::{self, MaybeUninit},
+};
 
 /// Allocates `[u8; size]` memory on stack and invokes `closure` with this slice as argument.
 ///
@@ -19,10 +22,9 @@ use core::mem::{self, MaybeUninit};
 #[allow(nonstandard_style)]
 pub fn with_alloca<R>(size: usize, f: impl FnOnce(&mut [MaybeUninit<u8>]) -> R) -> R {
     unsafe {
-        use ::core::ffi::c_void;
-        type cb_t = unsafe extern "C-unwind" fn(ptr: *mut u8, data: *mut c_void);
+        type Callback = unsafe extern "C-unwind" fn(ptr: *mut u8, data: *mut c_void);
         extern "C-unwind" {
-            fn c_with_alloca(size: usize, cb: cb_t, data: *mut c_void);
+            fn c_with_alloca(size: usize, callback: Callback, data: *mut c_void);
         }
         let mut f = Some(f);
         let mut ret = None;
@@ -33,7 +35,7 @@ pub fn with_alloca<R>(size: usize, f: impl FnOnce(&mut [MaybeUninit<u8>]) -> R) 
             ret = Some(f.take().unwrap()(slice));
         };
         #[inline(always)]
-        fn with_F_of_val<F>(_: &mut F) -> cb_t
+        fn with_F_of_val<F>(_: &mut F) -> Callback
         where
             F: FnMut(*mut u8),
         {
