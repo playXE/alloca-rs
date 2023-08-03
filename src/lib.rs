@@ -25,7 +25,6 @@ where
         use ::core::ffi::c_void;
         type cb_t = unsafe extern "C-unwind" fn(ptr: *mut u8, data: *mut c_void);
         extern "C-unwind" {
-
             fn c_with_alloca(size: usize, cb: cb_t, data: *mut c_void);
         }
         let mut f = Some(f);
