@@ -7,7 +7,6 @@ mod alloca {
 #[test]
 fn test_create() {
     let x = alloca::with_alloca(4096, |_| {
-        assert!(true);
         42
     });
     assert_eq!(x, 42);
