@@ -1,9 +1,9 @@
 # alloca-rs
 
-Mostly safe no_std wrapper for `alloca` in Rust. 
+Mostly safe no_std wrapper for `alloca` in Rust.
 
-
-This crate uses Rust lifetime system to ensure that stack allocated memory will not be used after function return, but it does not make any guarantee about memory that is turned into raw pointer and stored somewhere else. 
+This crate uses Rust lifetime system to ensure that stack allocated memory will not be used after function return, but
+it does not make any guarantee about memory that is turned into raw pointer and stored somewhere else.
 
 # Example
 
