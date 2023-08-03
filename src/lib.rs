@@ -59,7 +59,7 @@ pub fn with_alloca<R>(size: usize, f: impl FnOnce(&mut [MaybeUninit<u8>]) -> R) 
 /// Same as `with_alloca` except it zeroes memory slice.
 pub fn with_alloca_zeroed<R>(size: usize, f: impl FnOnce(&mut [u8]) -> R) -> R {
     with_alloca(size, |memory| unsafe {
-        ptr::write_bytes(memory.as_mut_ptr().cast::<u8>(), 0, size);
+        ptr::write_bytes(memory.as_mut_ptr(), 0, size);
         f(mem::transmute(memory))
     })
 }
