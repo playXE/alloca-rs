@@ -2,8 +2,28 @@
 
 use core::{
     ffi::c_void,
-    mem::{self, MaybeUninit},
+    mem::{self, ManuallyDrop, MaybeUninit},
+    ptr, slice,
 };
+
+type Callback = unsafe extern "C-unwind" fn(ptr: *mut MaybeUninit<u8>, data: *mut c_void);
+
+extern "C-unwind" {
+    fn c_with_alloca(size: usize, callback: Callback, data: *mut c_void);
+}
+
+#[inline(always)]
+fn get_trampoline<F: FnOnce(*mut MaybeUninit<u8>)>(_closure: &F) -> Callback {
+    trampoline::<F>
+}
+
+unsafe extern "C-unwind" fn trampoline<F: FnOnce(*mut MaybeUninit<u8>)>(
+    ptr: *mut MaybeUninit<u8>,
+    data: *mut c_void,
+) {
+    let f = ManuallyDrop::take(&mut *(data as *mut ManuallyDrop<F>));
+    f(ptr);
+}
 
 /// Allocates `[u8; size]` memory on stack and invokes `closure` with this slice as argument.
 ///
@@ -19,47 +39,28 @@ use core::{
 /// - Allocating more memory than thread stack size.
 ///
 ///   This will trigger segfault on stack overflow.
-#[allow(nonstandard_style)]
 pub fn with_alloca<R>(size: usize, f: impl FnOnce(&mut [MaybeUninit<u8>]) -> R) -> R {
+    let mut ret = MaybeUninit::uninit();
+
+    let closure = |ptr| {
+        let slice = unsafe { slice::from_raw_parts_mut(ptr, size) };
+        ret.write(f(slice));
+    };
+
+    let trampoline = get_trampoline(&closure);
+    let mut closure_data = ManuallyDrop::new(closure);
+
     unsafe {
-        type Callback = unsafe extern "C-unwind" fn(ptr: *mut u8, data: *mut c_void);
-        extern "C-unwind" {
-            fn c_with_alloca(size: usize, callback: Callback, data: *mut c_void);
-        }
-        let mut f = Some(f);
-        let mut ret = None;
-        // &mut (impl FnMut(*mut u8))
-        let ref mut f = |ptr: *mut u8| {
-            let slice = ::core::slice::from_raw_parts_mut(ptr.cast::<MaybeUninit<u8>>(), size);
-
-            ret = Some(f.take().unwrap()(slice));
-        };
-        #[inline(always)]
-        fn with_F_of_val<F>(_: &mut F) -> Callback
-        where
-            F: FnMut(*mut u8),
-        {
-            unsafe extern "C-unwind" fn trampoline<F: FnMut(*mut u8)>(
-                ptr: *mut u8,
-                data: *mut c_void,
-            ) {
-                (&mut *data.cast::<F>())(ptr);
-            }
-
-            trampoline::<F>
-        }
-
-        c_with_alloca(size, with_F_of_val(f), <*mut _>::cast::<c_void>(f));
-
-        ret.unwrap()
+        c_with_alloca(size, trampoline, &mut closure_data as *mut _ as *mut c_void);
+        ret.assume_init()
     }
 }
 
 /// Same as `with_alloca` except it zeroes memory slice.
 pub fn with_alloca_zeroed<R>(size: usize, f: impl FnOnce(&mut [u8]) -> R) -> R {
     with_alloca(size, |memory| unsafe {
-        core::ptr::write_bytes(memory.as_mut_ptr().cast::<u8>(), 0, size);
-        f(core::mem::transmute(memory))
+        ptr::write_bytes(memory.as_mut_ptr().cast::<u8>(), 0, size);
+        f(mem::transmute(memory))
     })
 }
 
