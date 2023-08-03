@@ -40,7 +40,10 @@ where
         where
             F: FnMut(*mut u8),
         {
-            unsafe extern "C-unwind" fn trampoline<F: FnMut(*mut u8)>(ptr: *mut u8, data: *mut c_void) {
+            unsafe extern "C-unwind" fn trampoline<F: FnMut(*mut u8)>(
+                ptr: *mut u8,
+                data: *mut c_void,
+            ) {
                 (&mut *data.cast::<F>())(ptr);
             }
 
