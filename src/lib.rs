@@ -2,8 +2,7 @@
 
 use core::mem::{align_of, size_of, MaybeUninit};
 
-/// Allocates `[u8;size]` memory on stack and invokes `closure` with this slice as argument.
-///
+/// Allocates `[u8; size]` memory on stack and invokes `closure` with this slice as argument.
 ///
 /// # Safety
 /// This function is safe because `c_with_alloca` (which is internally used) will always returns non-null
@@ -16,11 +15,7 @@ use core::mem::{align_of, size_of, MaybeUninit};
 /// managed to store pointer to memory and use it.
 /// - Allocating more memory than thread stack size.
 ///
-///
-///     This will trigger segfault on stack overflow.
-///
-///
-///
+///   This will trigger segfault on stack overflow.
 #[allow(nonstandard_style)]
 pub fn with_alloca<R, F>(size: usize, f: F) -> R
 where
