@@ -63,17 +63,15 @@ pub fn with_alloca_zeroed<R>(size: usize, f: impl FnOnce(&mut [u8]) -> R) -> R {
 
 /// Allocates `T` on stack space.
 pub fn alloca<T, R>(f: impl FnOnce(&mut MaybeUninit<T>) -> R) -> R {
-    with_alloca(
-        mem::size_of::<T>() + (mem::align_of::<T>() - 1),
-        |memory| unsafe {
-            let mut raw_memory = memory.as_mut_ptr();
-            if raw_memory as usize % mem::align_of::<T>() != 0 {
-                raw_memory = raw_memory
-                    .add(mem::align_of::<T>() - raw_memory as usize % mem::align_of::<T>());
-            }
-            f(&mut *raw_memory.cast::<MaybeUninit<T>>())
-        },
-    )
+    use mem::{align_of, size_of};
+
+    with_alloca(size_of::<T>() + (align_of::<T>() - 1), |memory| unsafe {
+        let mut raw_memory = memory.as_mut_ptr();
+        if raw_memory as usize % align_of::<T>() != 0 {
+            raw_memory = raw_memory.add(align_of::<T>() - raw_memory as usize % align_of::<T>());
+        }
+        f(&mut *raw_memory.cast::<MaybeUninit<T>>())
+    })
 }
 
 #[cfg(test)]
