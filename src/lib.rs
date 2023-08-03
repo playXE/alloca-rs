@@ -6,13 +6,11 @@
 //!
 //! ### Example
 //! ```rust
-//! fn main() {
-//!     // allocate 128 bytes on the stack
-//!     alloca::with_alloca(128, |memory| {
-//!         // memory: &mut [MaybeUninit<u8>]
-//!         assert_eq!(memory.len(), 128);
-//!     });
-//! }
+//! // allocate 128 bytes on the stack
+//! alloca::with_alloca(128, |memory| {
+//!     // memory: &mut [MaybeUninit<u8>]
+//!     assert_eq!(memory.len(), 128);
+//! });
 //! ```
 
 #![no_std]
