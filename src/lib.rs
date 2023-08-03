@@ -28,7 +28,7 @@ where
             fn c_with_alloca(size: usize, cb: cb_t, data: *mut c_void);
         }
         let mut f = Some(f);
-        let mut ret = None::<R>;
+        let mut ret = None;
         // &mut (impl FnMut(*mut u8))
         let ref mut f = |ptr: *mut u8| {
             let slice = ::core::slice::from_raw_parts_mut(ptr.cast::<MaybeUninit<u8>>(), size);
