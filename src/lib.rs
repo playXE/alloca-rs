@@ -17,7 +17,7 @@ use core::mem::{self, MaybeUninit};
 ///
 ///   This will trigger segfault on stack overflow.
 #[allow(nonstandard_style)]
-pub fn with_alloca<R, F: FnOnce(&mut [MaybeUninit<u8>]) -> R>(size: usize, f: F) -> R {
+pub fn with_alloca<R>(size: usize, f: impl FnOnce(&mut [MaybeUninit<u8>]) -> R) -> R {
     unsafe {
         use ::core::ffi::c_void;
         type cb_t = unsafe extern "C-unwind" fn(ptr: *mut u8, data: *mut c_void);
@@ -54,7 +54,7 @@ pub fn with_alloca<R, F: FnOnce(&mut [MaybeUninit<u8>]) -> R>(size: usize, f: F)
 }
 
 /// Same as `with_alloca` except it zeroes memory slice.
-pub fn with_alloca_zeroed<R, F: FnOnce(&mut [u8]) -> R>(size: usize, f: F) -> R {
+pub fn with_alloca_zeroed<R>(size: usize, f: impl FnOnce(&mut [u8]) -> R) -> R {
     with_alloca(size, |memory| unsafe {
         core::ptr::write_bytes(memory.as_mut_ptr().cast::<u8>(), 0, size);
         f(core::mem::transmute(memory))
@@ -62,7 +62,7 @@ pub fn with_alloca_zeroed<R, F: FnOnce(&mut [u8]) -> R>(size: usize, f: F) -> R 
 }
 
 /// Allocates `T` on stack space.
-pub fn alloca<T, R, F: FnOnce(&mut MaybeUninit<T>) -> R>(f: F) -> R {
+pub fn alloca<T, R>(f: impl FnOnce(&mut MaybeUninit<T>) -> R) -> R {
     with_alloca(
         mem::size_of::<T>() + (mem::align_of::<T>() - 1),
         |memory| unsafe {
