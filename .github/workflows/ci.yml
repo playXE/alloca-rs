@@ -22,7 +22,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Rust cache
-        if: github.ref == 'refs/heads/master' # pull requests can overflow cache storage
+        if: github.ref == 'refs/heads/main' # pull requests can overflow cache storage
         uses: Swatinem/rust-cache@v2
 
       - name: Cargo build
